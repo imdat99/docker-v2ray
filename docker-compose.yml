@@ -1,0 +1,39 @@
+version: '3'
+
+services:
+  openssl:
+    image: nginx:latest
+    container_name: openssl 
+    volumes:
+      - ./data/cert:/var/cert
+    command: "/bin/sh /var/cert/generate.sh"
+
+  v2ray:
+    image: v2ray/official:latest
+    container_name: v2ray
+    environment:
+      - TZ=Asia/Shanghai
+    restart: always
+    command: v2ray -config=/etc/v2ray/config.json
+    volumes:
+      - ./data/v2ray:/etc/v2ray
+      - ./logs/v2ray:/var/log/v2ray
+    expose:
+      - "9999" 
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    restart: unless-stopped
+    volumes:
+      - ./data/nginx/conf.d:/etc/nginx/conf.d
+      - ./data/cert:/var/cert
+      - ./logs/nginx:/var/log/nginx
+    ports:
+      - "81:80"
+      - "444:443"
+    links:
+      - v2ray:v2ray 
+    depends_on:
+      - openssl
+
